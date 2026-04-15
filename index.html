@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Nexus BEP | Break-Even Intelligence</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    /* animated gradient background */
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 10% 30%, rgba(15, 25, 45, 0.95), rgba(5, 12, 24, 0.98));
+      background-attachment: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: background 0.4s ease;
+      position: relative;
+    }
+
+    /* animated mesh gradient overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at 40% 50%, rgba(70, 130, 200, 0.2), transparent 60%),
+                  repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* light mode override */
+    body.light {
+      background: radial-gradient(circle at 10% 30%, #f0f4fa, #e2e8f0);
+    }
+    body.light::before {
+      background: radial-gradient(ellipse at 40% 50%, rgba(100, 150, 220, 0.1), transparent 70%);
+    }
+
+    /* main glassmorphism card */
+    .bep-card {
+      max-width: 1400px;
+      width: 100%;
+      background: rgba(22, 32, 48, 0.55);
+      backdrop-filter: blur(16px);
+      border-radius: 3rem;
+      padding: 2rem 2rem 2rem 2rem;
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255,255,255,0.2);
+      z-index: 2;
+      animation: fadeSlideUp 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+
+    body.light .bep-card {
+      background: rgba(245, 248, 255, 0.7);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    @keyframes fadeSlideUp {
+      0% { opacity: 0; transform: translateY(28px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* header + theme toggle */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #FFFFFF, #B0D4FF);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    body.light h1 {
+      background: linear-gradient(135deg, #1A2A3A, #2C5368);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .theme-toggle {
+      background: rgba(255,255,240,0.2);
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      border-radius: 3rem;
+      padding: 0.5rem 1rem;
+      backdrop-filter: blur(4px);
+      transition: 0.2s;
+      color: white;
+    }
+    body.light .theme-toggle {
+      background: #ffffffcc;
+      color: #1e293b;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .reset-btn {
+      background: rgba(200,70,70,0.2);
+      border: 1px solid rgba(255,100,100,0.4);
+      border-radius: 2rem;
+      padding: 0.5rem 1.3rem;
+      font-weight: 500;
+      margin-left: 1rem;
+      color: #ffcdcd;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    body.light .reset-btn {
+      background: #ffebeb;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+    .reset-btn:hover {
+      background: rgba(220,80,80,0.5);
+      transform: scale(0.96);
+    }
+
+    /* two column layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 2rem;
+      margin: 1.5rem 0 2rem;
+    }
+    @media (max-width: 880px) {
+      .dashboard-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .bep-card { padding: 1.5rem; }
+    }
+
+    /* input fields group */
+    .input-group {
+      background: rgba(10, 20, 30, 0.35);
+      border-radius: 2rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    body.light .input-group {
+      background: rgba(255,255,255,0.55);
+      border-color: rgba(0,0,0,0.05);
+    }
+    .field {
+      margin-bottom: 1.7rem;
+      position: relative;
+    }
+    label {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: #eef4ff;
+      font-size: 0.9rem;
+    }
+    body.light label {
+      color: #1e2a3a;
+    }
+    .tooltip-icon {
+      cursor: help;
+      background: rgba(255,255,200,0.2);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: white;
+      outline: none;
+      transition: all 0.2s;
+    }
+    body.light input {
+      background: white;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    input:focus {
+      border-color: #5f9eff;
+      box-shadow: 0 0 0 3px rgba(79, 156, 255, 0.4);
+      transform: scale(1.01);
+    }
+    .error-msg {
+      font-size: 0.75rem;
+      margin-top: 6px;
+      padding-left: 12px;
+      color: #ffb4a2;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    body.light .error-msg {
+      color: #c2410c;
+    }
+
+    /* result premium cards */
+    .result-panel {
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 2rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(4px);
+    }
+    .metrics {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .metric-card {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border-radius: 1.5rem;
+      padding: 1rem;
+      text-align: center;
+      transition: 0.2s;
+    }
+    body.light .metric-card {
+      background: rgba(0,0,0,0.03);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .metric-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.7;
+    }
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.4rem 1.2rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+
+    .suggestion-box {
+      background: rgba(0,0,0,0.25);
+      border-radius: 1.2rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+    }
+
+    /* canvas graph */
+    .graph-container {
+      background: rgba(0,0,0,0.3);
+      border-radius: 1.5rem;
+      padding: 0.8rem;
+      margin-top: 1rem;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      background: rgba(10, 20, 35, 0.6);
+      border-radius: 1.2rem;
+      display: block;
+    }
+    body.light canvas {
+      background: rgba(240, 245, 255, 0.9);
+    }
+    button, .reset-btn, .theme-toggle {
+      cursor: pointer;
+    }
+    .loading-effect {
+      opacity: 0.6;
+      transition: 0.2s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bep-card" id="appRoot">
+  <div class="header-row">
+    <h1>📊 BREAK-EVEN · Nexus BEP</h1>
+    <div style="display: flex; gap: 12px;">
+      <button class="theme-toggle" id="themeToggleBtn" aria-label="Dark/Light mode">🌓 Light</button>
+      <button class="reset-btn" id="resetBtn">⟳ Reset</button>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- LEFT: INPUTS + SMART TIPS -->
+    <div class="input-group">
+      <div class="field">
+        <label>🏢 Fixed Cost <span class="tooltip-icon" data-tooltip="Rent, salaries, fixed expenses">ⓘ</span></label>
+        <input type="number" id="fixedCost" placeholder="e.g., 5000" value="5000" step="100">
+        <div class="error-msg" id="errorFixed"></div>
+      </div>
+      <div class="field">
+        <label>⚙️ Variable Cost per Unit <span class="tooltip-icon" data-tooltip="Cost per product (materials, labor)">ⓘ</span></label>
+        <input type="number" id="variableCost" placeholder="e.g., 30" value="30" step="1">
+        <div class="error-msg" id="errorVar"></div>
+      </div>
+      <div class="field">
+        <label>💰 Selling Price per Unit <span class="tooltip-icon" data-tooltip="Revenue per unit sold">ⓘ</span></label>
+        <input type="number" id="sellingPrice" placeholder="e.g., 50" value="50" step="1">
+        <div class="error-msg" id="errorPrice"></div>
+      </div>
+      <div class="suggestion-box" id="smartSuggestion">
+        💡 Smart insight will appear here.
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS + STATUS -->
+    <div class="result-panel" id="resultPanel">
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">📦 Break-Even Units</div>
+          <div class="metric-value" id="bepUnitsDisplay">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">💰 Break-Even Revenue</div>
+          <div class="metric-value" id="bepRevenueDisplay">—</div>
+        </div>
+      </div>
+      <div id="statusArea" style="text-align: center; margin-bottom: 1rem;">
+        <span class="status-badge" id="statusBadge">⚖️ Calculating...</span>
+      </div>
+      <div class="graph-container">
+        <canvas id="bepCanvas" width="600" height="300" style="width:100%; height:auto; max-width:600px; aspect-ratio:600/300"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    // DOM elements
+    const fixedInput = document.getElementById('fixedCost');
+    const varInput = document.getElementById('variableCost');
+    const priceInput = document.getElementById('sellingPrice');
+    const bepUnitsSpan = document.getElementById('bepUnitsDisplay');
+    const bepRevenueSpan = document.getElementById('bepRevenueDisplay');
+    const statusBadge = document.getElementById('statusBadge');
+    const smartDiv = document.getElementById('smartSuggestion');
+    const errorFixed = document.getElementById('errorFixed');
+    const errorVar = document.getElementById('errorVar');
+    const errorPrice = document.getElementById('errorPrice');
+    const resetBtn = document.getElementById('resetBtn');
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const canvas = document.getElementById('bepCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let animationFrame = null;
+    let currentBEPUnits = 0;
+    let currentBEPRevenue = 0;
+    let currentFixed = 5000, currentVar = 30, currentPrice = 50;
+
+    // Helper: format currency
+    const formatMoney = (val) => '$' + val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    const formatUnits = (val) => Math.round(val).toLocaleString();
+
+    // animate number counting
+    function animateNumber(element, target, isCurrency = false, decimals = 0) {
+      if (!element) return;
+      const start = parseFloat(element.innerText.replace(/[^0-9.-]+/g, '')) || 0;
+      const duration = 500;
+      const startTime = performance.now();
+      function step(now) {
+        const elapsed = now - startTime;
+        let progress = Math.min(1, elapsed / duration);
+        let current = start + (target - start) * progress;
+        if (isCurrency) {
+          element.innerText = formatMoney(current);
+        } else {
+          element.innerText = decimals === 0 ? Math.round(current).toLocaleString() : current.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+        if (progress < 1) requestAnimationFrame(step);
+        else {
+          if (isCurrency) element.innerText = formatMoney(target);
+          else element.innerText = (decimals === 0 ? Math.round(target).toLocaleString() : target.toLocaleString());
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    // Loading simulation + realtime compute with micro loading
+    let loadingTimeout = null;
+    function computeAndUpdate() {
+      // Clear previous timeout to simulate fresh "loading" effect
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+      const panel = document.getElementById('resultPanel');
+      panel.classList.add('loading-effect');
+      loadingTimeout = setTimeout(() => {
+        performCalculations();
+        panel.classList.remove('loading-effect');
+      }, 120);
+    }
+
+    function performCalculations() {
+      // get raw values
+      let fixed = parseFloat(fixedInput.value);
+      let varCost = parseFloat(varInput.value);
+      let sellPrice = parseFloat(priceInput.value);
+      
+      // validation states
+      let hasError = false;
+      errorFixed.innerText = '';
+      errorVar.innerText = '';
+      errorPrice.innerText = '';
+
+      if (isNaN(fixed) || fixed < 0) { errorFixed.innerText = '⚠️ Enter valid fixed cost (≥ 0)'; hasError = true; fixed = 0; }
+      if (isNaN(varCost) || varCost < 0) { errorVar.innerText = '⚠️ Variable cost must be ≥ 0'; hasError = true; varCost = 0; }
+      if (isNaN(sellPrice) || sellPrice < 0) { errorPrice.innerText = '⚠️ Enter positive price'; hasError = true; sellPrice = 0; }
+      
+      if (sellPrice <= varCost && sellPrice >= 0 && varCost >= 0) {
+        errorPrice.innerText = '⚠️ Selling price must be > Variable cost to break even';
+        hasError = true;
+      }
+      
+      let bepUnits = 0, bepRevenue = 0;
+      let isValid = (!hasError && sellPrice > varCost && fixed >= 0);
+      
+      if (isValid && (sellPrice - varCost) > 0) {
+        bepUnits = fixed / (sellPrice - varCost);
+        bepRevenue = bepUnits * sellPrice;
+        if (bepUnits < 0) bepUnits = 0;
+        if (bepRevenue < 0) bepRevenue = 0;
+      } else if (!hasError && sellPrice <= varCost && sellPrice > 0) {
+        bepUnits = Infinity;
+        bepRevenue = Infinity;
+      } else {
+        bepUnits = 0;
+        bepRevenue = 0;
+      }
+      
+      currentBEPUnits = bepUnits;
+      currentBEPRevenue = bepRevenue;
+      currentFixed = fixed;
+      currentVar = varCost;
+      currentPrice = sellPrice;
+      
+      // update displays with animated counting
+      if (!isNaN(bepUnits) && isFinite(bepUnits)) {
+        animateNumber(bepUnitsSpan, bepUnits, false, 0);
+      } else { bepUnitsSpan.innerText = '∞'; }
+      
+      if (!isNaN(bepRevenue) && isFinite(bepRevenue)) {
+        animateNumber(bepRevenueSpan, bepRevenue, true, 2);
+      } else { bepRevenueSpan.innerText = '∞'; }
+      
+      // status & profit/loss messaging
+      let statusMsg = '';
+      let statusColor = '';
+      if (!isValid || sellPrice <= varCost) {
+        if (sellPrice <= varCost && sellPrice > 0) {
+          statusMsg = '🔴 IMPOSSIBLE BREAK-EVEN · Price ≤ Variable Cost';
+          statusColor = '#f97316';
+        } else if (fixed === 0 && sellPrice > varCost) {
+          statusMsg = '🟢 ZERO FIXED COST: Always profitable!';
+          statusColor = '#10b981';
+        } else {
+          statusMsg = '⚠️ Invalid inputs → adjust price/cost';
+          statusColor = '#facc15';
+        }
+      } else {
+        // hypothetical units to show profit/loss suggestion, we'll use a reference: let's assume 80% of break-even units?
+        // Actually better: compare with a dummy current sales volume? We'll just derive state: For dynamic we can assume we sell at bepUnits.
+        // But to indicate loss/profit we can show if fixed >0 and price>var, at bep exact = break even.
+        // but we want: "You are currently at a loss" only if we consider hypothetical? Actually make it relative: show if break-even units > 0 => 
+        // The message: if bepUnits > 0 then status: "You need to sell X units to break even."
+        // Additional profit/loss statement: since we have no current sales, we provide based on achievable: if bepUnits > 0 -> break even needed.
+        // but to match spec: we output loss/break-even/profit based on actual BEP point: 
+        // At exactly BEP it's breakeven. For UX we add additional: "Sell above X to enter profit zone"
+        if (fixed === 0) {
+          statusMsg = '🟢 PROFIT ZONE · Zero fixed costs, each sale yields profit!';
+          statusColor = '#10b981';
+        } else if (bepUnits > 0 && isFinite(bepUnits)) {
+          statusMsg = `⚖️ BREAK-EVEN at ${formatUnits(bepUnits)} units. Sell more → PROFIT 🟢`;
+          statusColor = '#facc15';
+        } else if (bepUnits === 0 && fixed === 0) {
+          statusMsg = '🟢 PROFIT (no fixed costs)';
+          statusColor = '#10b981';
+        } else {
+          statusMsg = '📉 LOSS ZONE — adjust parameters';
+          statusColor = '#ef4444';
+        }
+      }
+      if (!hasError && sellPrice > varCost && fixed > 0 && isFinite(bepUnits) && bepUnits > 0) {
+        statusMsg = `⚖️ BREAK-EVEN at ${formatUnits(bepUnits)} units · Profit beyond 🟢`;
+        statusColor = '#fbbf24';
+      } else if (!hasError && sellPrice > varCost && fixed === 0) {
+        statusMsg = '🟢 PROFITABLE MARGIN (no fixed cost)';
+        statusColor = '#10b981';
+      } else if (!hasError && sellPrice > varCost && fixed > 0 && bepUnits === 0) {
+        statusMsg = '🟢 Immediate profit (fixed cost zero or negative?)';
+        statusColor = '#10b981';
+      }
+      if (sellPrice <= varCost && sellPrice > 0 && !hasError) statusMsg = '🔴 LOSS CONFIGURATION: Price ≤ Variable Cost → Never break even';
+      statusBadge.innerText = statusMsg;
+      statusBadge.style.backgroundColor = statusColor + '30';
+      statusBadge.style.color = '#fff';
+      if (document.body.classList.contains('light')) statusBadge.style.color = '#1f2937';
+      else statusBadge.style.color = 'white';
+      
+      // Smart suggestions
+      let suggestion = '';
+      if (sellPrice > varCost && fixed > 0 && isFinite(bepUnits) && bepUnits > 0) {
+        suggestion = `💡 To lower break-even, reduce fixed costs by 20% → ${formatUnits(bepUnits * 0.8)} units. Or raise price by 10% → ${formatUnits(fixed / (sellPrice*1.1 - varCost))} units.`;
+      } else if (sellPrice <= varCost && sellPrice > 0) {
+        suggestion = `⚠️ Increase selling price above ${formatMoney(varCost)} or reduce variable cost to reach break-even.`;
+      } else if (fixed === 0) {
+        suggestion = `✨ Zero fixed costs — every sale contributes to profit. Great scalability!`;
+      } else {
+        suggestion = `📈 Adjust inputs: higher price or lower variable cost accelerates profitability.`;
+      }
+      smartDiv.innerHTML = `🧠 ${suggestion}`;
+      
+      // draw dynamic graph (animate drawing)
+      drawGraphAnimated();
+    }
+    
+    // Graph drawing with unique animated strokes
+    let animProgress = 0;
+    let animRequest = null;
+    function drawGraphAnimated(animate = true) {
+      if (animRequest) cancelAnimationFrame(animRequest);
+      if (!animate) {
+        drawCanvasNow(1);
+        return;
+      }
+      animProgress = 0;
+      const stepAnim = () => {
+        animProgress += 0.05;
+        if (animProgress >= 1) {
+          animProgress = 1;
+          drawCanvasNow(1);
+          animRequest = null;
+        } else {
+          drawCanvasNow(animProgress);
+          animRequest = requestAnimationFrame(stepAnim);
+        }
+      };
+      animRequest = requestAnimationFrame(stepAnim);
+    }
+    
+    function drawCanvasNow(t) {
+      if (!ctx) return;
+      const fixed = currentFixed;
+      const varCost = currentVar;
+      const price = currentPrice;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = w;
+      canvas.height = h;
+      if (w === 0 || h === 0) return;
+      
+      const maxUnits = (() => {
+        if (price <= varCost) return 200;
+        const bep = fixed / (price - varCost);
+        if (!isFinite(bep) || bep <= 0) return 200;
+        return Math.max(100, Math.ceil(bep * 2.2));
+      })();
+      const maxCostRevenue = Math.max(fixed + varCost * maxUnits, price * maxUnits, fixed * 1.5, 100);
+      const xScale = w / maxUnits;
+      const yScale = h / maxCostRevenue;
+      
+      ctx.clearRect(0, 0, w, h);
+      // axes
+      ctx.beginPath();
+      ctx.strokeStyle = '#aaa';
+      ctx.lineWidth = 1;
+      ctx.moveTo(40, 0);
+      ctx.lineTo(40, h-30);
+      ctx.lineTo(w, h-30);
+      ctx.stroke();
+      
+      // Total Cost Line: FC + VC*units
+      const totalCostPoints = [];
+      for (let u = 0; u <= maxUnits; u+= Math.max(1, Math.floor(maxUnits/60))) {
+        let cost = fixed + varCost * u;
+        let x = 40 + u * xScale;
+        let y = h-30 - cost * yScale;
+        totalCostPoints.push({x,y});
+      }
+      // Revenue Line
+      const revenuePoints = [];
+      for (let u = 0; u <= maxUnits; u+= Math.max(1, Math.floor(maxUnits/60))) {
+        let rev = price * u;
+        let x = 40 + u * xScale;
+        let y = h-30 - rev * yScale;
+        revenuePoints.push({x,y});
+      }
+      
+      const drawPartial = (points, color, width, isDashed=false) => {
+        if(points.length<2) return;
+        const totalSegments = points.length-1;
+        const segToDraw = Math.floor(totalSegments * t);
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if(isDashed) ctx.setLineDash([6,8]);
+        else ctx.setLineDash([]);
+        let drawn = false;
+        for(let i=0;i<segToDraw && i<points.length-1;i++){
+          if(!drawn){
+            ctx.moveTo(points[i].x, points[i].y);
+            drawn=true;
+          }
+          ctx.lineTo(points[i+1].x, points[i+1].y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(points[i+1].x, points[i+1].y);
+        }
+        if(segToDraw === totalSegments && points.length>1){
+          ctx.lineTo(points[points.length-1].x, points[points.length-1].y);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      };
+      
+      drawPartial(totalCostPoints, '#ff9f4a', 2.8, false);
+      drawPartial(revenuePoints, '#4cc9f0', 2.8, false);
+      
+      // intersection (break even)
+      if (price > varCost && fixed > 0 && isFinite(currentBEPUnits) && currentBEPUnits > 0 && currentBEPUnits <= maxUnits) {
+        const bepX = 40 + currentBEPUnits * xScale;
+        const bepYcost = h-30 - (fixed + varCost * currentBEPUnits) * yScale;
+        ctx.beginPath();
+        ctx.fillStyle = '#f0f922';
+        ctx.shadowBlur = 8;
+        ctx.arc(bepX, bepYcost, 7, 0, 2*Math.PI);
+        ctx.fillStyle = '#ffdd44';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText('⚡ BEP', bepX-15, bepYcost-6);
+      }
+      ctx.fillStyle = '#ccc';
+      ctx.font = '9px monospace';
+      ctx.fillText('Units →', w-50, h-10);
+      ctx.fillText('↑ $', 10, 20);
+    }
+    
+    function resetAll() {
+      fixedInput.value = '5000';
+      varInput.value = '30';
+      priceInput.value = '50';
+      errorFixed.innerText = '';
+      errorVar.innerText = '';
+      errorPrice.innerText = '';
+      computeAndUpdate();
+    }
+    
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      themeBtn.innerText = isLight ? '🌙 Dark' : '🌓 Light';
+      drawGraphAnimated(true);
+    }
+    
+    // event listeners real-time
+    fixedInput.addEventListener('input', computeAndUpdate);
+    varInput.addEventListener('input', computeAndUpdate);
+    priceInput.addEventListener('input', computeAndUpdate);
+    resetBtn.addEventListener('click', resetAll);
+    themeBtn.addEventListener('click', toggleTheme);
+    
+    window.addEventListener('resize', () => { drawGraphAnimated(true); });
+    computeAndUpdate();
+  })();
+</script>
+</body>
+</html>
